@@ -38,17 +38,18 @@ The index of this DataFrame should be the name of the country, and the columns s
        '2009', '2010', '2011', '2012', '2013', '2014', '2015'].
 
 *This function should return a DataFrame with 20 columns and 15 entries, and the rows of the DataFrame should be sorted by "Rank".*'''
+
 def answer_one():
-    ## Energy Dataframe
+    ##################################################################
+                        ## Energy Dataframe
+    ##################################################################
     Energy = pd.read_excel("assets/Energy Indicators.xls", skiprows=17, usecols="C:F")
     Energy = Energy.dropna(how="all")
     Energy.columns = ["Country", "Energy Supply", "Energy Supply per Capita", "% Renewable"]
     
-    Energy["Energy Supply"].replace(r"\.{3,}", np.nan, regex=True, inplace=True)
-    
-    
     ## Cleaning Data
-    Energy.replace(r"\.{3,}", np.nan, regex=True, inplace=True)
+    Energy["Energy Supply"].replace(r"\.{3,}", np.nan, regex=True, inplace=True)
+    Energy['Energy Supply'] *= 1000000
     
     ## Changing country names
     Energy.replace(r"Republic of Korea", "South Korea", regex=True, inplace=True)
@@ -58,7 +59,10 @@ def answer_one():
     Energy.replace(r"[0-9]", "" , regex=True, inplace=True)
     Energy["Country"].replace(r"[()]", "", regex=True, inplace=True)
     
-    ## GDP Dataframe
+    ##################################################################
+                        ## GDP Dataframe
+    ##################################################################
+    
     GDP = pd.read_csv("assets/world_bank.csv", skiprows=4)
     GDP.rename(columns={"Country Name": "Country"}, inplace=True)
     GDP = GDP[['Country','2006','2007','2008','2009','2010','2011','2012','2013','2014','2015']]
@@ -68,16 +72,25 @@ def answer_one():
     GDP.replace(r"Iran, Islamic Rep.", "Iran", regex=True, inplace=True)
     GDP.replace(r"Hong Kong SAR, China", "Hong Kong", regex=True, inplace=True)
 
-    ## ScimEn Dataframe
+    ##################################################################
+                        ## ScimEn Dataframe
+    ##################################################################    
     ScimEn = pd.read_excel("assets/scimagojr-3.xlsx")
     ScimEn = ScimEn.head(15)
     
-    ## Combining Dataframes into one
+    ##################################################################
+                        ## Combined Dataframe
+    ##################################################################    
     new_df = pd.merge(ScimEn, GDP, how='left', on='Country')
     new_df = pd.merge(new_df, Energy, how='left', on='Country')
     new_df.set_index('Country', inplace=True)
-    new_df.columns = ['Rank', 'Documents', 'Citable documents', 'Citations', 'Self-citations', 'Citations per document', 
-                      'H index', 'Energy Supply', 'Energy Supply per Capita', 
-                      '% Renewable', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015']
-    new_df["Energy Supply"] = (new_df["Energy Supply"] * 1_000_000).round().astype(int)
+    new_df.columns = [
+        'Rank', 'Documents', 'Citable documents', 'Citations', 'Self-citations', 'Citations per document', 
+        'H index', 'Energy Supply', 'Energy Supply per Capita', 
+        '% Renewable', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'
+    ]
     return new_df
+def fake_answer():
+    Energy = pd.read_excel("assets/Energy Indicators.xls", skiprows=17, usecols="C:F")
+    Energy = Energy.dropna(how="all")
+    return Energy
