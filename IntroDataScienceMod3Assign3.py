@@ -40,6 +40,7 @@ The index of this DataFrame should be the name of the country, and the columns s
 *This function should return a DataFrame with 20 columns and 15 entries, and the rows of the DataFrame should be sorted by "Rank".*'''
 
 def answer_one():
+       
     ##################################################################
                         ## Energy Dataframe
     ##################################################################
@@ -89,4 +90,5 @@ def answer_one():
         'H index', 'Energy Supply', 'Energy Supply per Capita', 
         '% Renewable', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'
     ]
+       
     return new_df
