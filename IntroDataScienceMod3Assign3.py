@@ -90,7 +90,3 @@ def answer_one():
         '% Renewable', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'
     ]
     return new_df
-def fake_answer():
-    Energy = pd.read_excel("assets/Energy Indicators.xls", skiprows=17, usecols="C:F")
-    Energy = Energy.dropna(how="all")
-    return Energy
