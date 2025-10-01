@@ -82,13 +82,13 @@ def answer_one():
     ##################################################################
                         ## Combined Dataframe
     ##################################################################    
-    new_df = pd.merge(ScimEn, GDP, how='left', on='Country')
-    new_df = pd.merge(new_df, Energy, how='left', on='Country')
-    new_df.set_index('Country', inplace=True)
-    new_df.columns = [
+    df = pd.merge(ScimEn, GDP, how='left', on='Country')
+    df = pd.merge(df, Energy, how='left', on='Country')
+    df.set_index('Country', inplace=True)
+    df.columns = [
         'Rank', 'Documents', 'Citable documents', 'Citations', 'Self-citations', 'Citations per document', 
         'H index', 'Energy Supply', 'Energy Supply per Capita', 
         '% Renewable', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'
     ]
        
-    return new_df
+    return df
