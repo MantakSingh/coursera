@@ -145,3 +145,71 @@ def answer_two():
     outer2 = pd.merge(outer1,GDP,how="outer",left_on="Country",right_on="Country").set_index("Country")
 
     return len(outer2)-len(inner2)
+       
+def answer_three():
+    
+    ##################################################################
+                        ## Energy Dataframe
+    ##################################################################
+    
+    Energy = pd.read_excel("assets/Energy Indicators.xls", skiprows=17, usecols="C:F")
+    Energy = Energy.dropna(how="all")
+    Energy.columns = ["Country", "Energy Supply", "Energy Supply per Capita", "% Renewable"]
+    
+    # Cleaning Data
+    Energy["Energy Supply"].replace(r"\.{3,}", np.nan, regex=True, inplace=True)
+    Energy['Energy Supply'] *= 1000000
+    
+    # Changing country names
+    Energy.replace({
+        "Republic of Korea": "South Korea",
+        "United States of America": "United States",
+        "United Kingdom of Great Britain and Northern Ireland": "United Kingdom",
+        "China, Hong Kong Special Administrative Region": "Hong Kong",
+        "Iran Islamic Republic of": "Iran"
+    }, inplace=True)
+    
+    # Remove numbers and parentheses from country names
+    Energy["Country"].replace(r"[0-9]", "", regex=True, inplace=True)
+    Energy["Country"].replace(r"[()]", "", regex=True, inplace=True)
+    
+    ##################################################################
+                        ## GDP Dataframe
+    ##################################################################
+    
+    GDP = pd.read_csv("assets/world_bank.csv", skiprows=4)
+    GDP.rename(columns={"Country Name": "Country"}, inplace=True)
+    GDP = GDP[['Country','2006','2007','2008','2009','2010','2011','2012','2013','2014','2015']]
+    
+    # Rename countries to match Energy / ScimEn
+    GDP.replace({
+        "Korea, Rep.": "South Korea",
+        "Iran, Islamic Rep.": "Iran",
+        "Hong Kong SAR, China": "Hong Kong"
+    }, inplace=True)
+    
+    ##################################################################
+                    ## ScimEn Dataframe
+    ##################################################################
+    
+    ScimEn = pd.read_excel("assets/scimagojr-3.xlsx")
+    
+    ##################################################################
+                    ## Combine Dataframes
+    ################################################################## 
+    
+    df = pd.merge(ScimEn, GDP, how='left', on='Country')
+    df = pd.merge(df, Energy, how='left', on='Country')
+    df.set_index('Country', inplace=True)
+    
+    ##################################################################
+            ## Select top 15 by Rank and compute GDP average
+    ##################################################################
+    
+    df_top15 = df[df['Rank'] <= 15].copy()
+    GDP_Series = df_top15[['2006','2007','2008','2009','2010','2011','2012','2013','2014','2015']].mean(axis=1)
+    
+    # Sort descending by average GDP (optional, depending on assignment expectation)
+    GDP_Series.sort_values(ascending=False, inplace=True)
+    
+    return GDP_Series
