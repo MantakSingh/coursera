@@ -3,9 +3,9 @@ import numpy as np
 import scipy.stats as stats
 import re
 
-# -------------------------------
-# Helper Functions
-# -------------------------------
+##################################################################
+                    ## Helper Functions
+##################################################################
 def clear_data(string1):
     """Remove reference annotations like [8] from city names."""
     if re.search(r'\[[a-z]* [0-9]+\]', string1) is None:
@@ -18,16 +18,21 @@ def get_area(team):
     for each in list(nhl_cities.index.values):
         if team in each:
             return nhl_cities.at[each, 'Metropolitan area']
+##################################################################
+                    ## Load Data
+##################################################################
 
-# -------------------------------
-# Load Data
-# -------------------------------
+# Load global data
 nhl_df = pd.read_csv("assets/nhl.csv")
 cities = pd.read_html("assets/wikipedia_data.html")[1]
 cities = cities.iloc[:-1, [0, 3, 5, 6, 7, 8]]
 
 # Keep only NHL 2018 data
 nhl_2018 = nhl_df[nhl_df['year'] == 2018].copy()
+
+# Clean NHL data
+nhl_2018['team'] = nhl_2018['team'].apply(lambda x: x[:-1].strip() if str(x).endswith("*") else str(x).strip())
+nhl_2018['Metropolitan area'] = nhl_2018['team'].apply(lambda x: get_area(x.split(" ")[-1]))
 
 # Clean Cities data
 cities['NHL'] = cities['NHL'].apply(lambda x: clear_data(str(x)))
@@ -38,13 +43,10 @@ nhl_cities = nhl_cities.drop(['—', ''], errors='ignore')
 population = cities[['Metropolitan area', 'Population (2016 est.)[8]']].set_index('Metropolitan area')
 population['Population (2016 est.)[8]'] = pd.to_numeric(population['Population (2016 est.)[8]'].str.replace(',', ''))
 
-# Clean NHL data
-nhl_2018['team'] = nhl_2018['team'].apply(lambda x: x[:-1].strip() if str(x).endswith("*") else str(x).strip())
-nhl_2018['Metropolitan area'] = nhl_2018['team'].apply(lambda x: get_area(x.split(" ")[-1]))
+##################################################################
+            ## Compute win/loss ratio per metro area
+##################################################################
 
-# -------------------------------
-# Compute win/loss ratio per metro area
-# -------------------------------
 out = []
 for group, frame in nhl_2018.groupby('Metropolitan area'):
     total_wins = frame['W'].astype(float).sum()
@@ -55,9 +57,10 @@ for group, frame in nhl_2018.groupby('Metropolitan area'):
 out_df = pd.DataFrame(out).set_index('Area')
 out_df = out_df.merge(population, left_index=True, right_index=True, how='inner')
 
-# -------------------------------
-# Function to calculate correlation
-# -------------------------------
+##################################################################
+            ## Function to calculate correlation
+##################################################################
+
 def nhl_correlation():
     population_by_region = out_df['Population (2016 est.)[8]'].dropna()
     win_loss_by_region = out_df['Ratio'].dropna()
@@ -70,9 +73,3 @@ def nhl_correlation():
     
     corr_tup = stats.pearsonr(population_by_region, win_loss_by_region)  # return only correlation coefficient
     return corr_tup[0]
-# -------------------------------
-# Quick check
-# -------------------------------
-print(out_df)
-print("Correlation:", nhl_correlation())
-
