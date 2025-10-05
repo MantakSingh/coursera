@@ -12,12 +12,6 @@ def clear_data(string1):
         return string1
     else:
         return string1.replace(re.search(r'\[[a-z]* [0-9]+\]', string1).group(), '')
-
-def get_area(team):
-    """Map an NHL team name to its corresponding metropolitan area."""
-    for each in list(nhl_cities.index.values):
-        if team in each:
-            return nhl_cities.at[each, 'Metropolitan area']
 ##################################################################
                     ## Load Data
 ##################################################################
@@ -27,21 +21,30 @@ nhl_df = pd.read_csv("assets/nhl.csv")
 cities = pd.read_html("assets/wikipedia_data.html")[1]
 cities = cities.iloc[:-1, [0, 3, 5, 6, 7, 8]]
 
-# Keep only NHL 2018 data
-nhl_2018 = nhl_df[nhl_df['year'] == 2018].copy()
-
-# Clean NHL data
-nhl_2018['team'] = nhl_2018['team'].apply(lambda x: x[:-1].strip() if str(x).endswith("*") else str(x).strip())
-nhl_2018['Metropolitan area'] = nhl_2018['team'].apply(lambda x: get_area(x.split(" ")[-1]))
-
 # Clean Cities data
 cities['NHL'] = cities['NHL'].apply(lambda x: clear_data(str(x)))
 nhl_cities = cities[['Metropolitan area', 'NHL']].set_index('NHL')
 nhl_cities = nhl_cities.drop(['—', ''], errors='ignore')
 
+# Keep only NHL 2018 data
+nhl_2018 = nhl_df[nhl_df['year'] == 2018].copy()
+
+
 # Population data
 population = cities[['Metropolitan area', 'Population (2016 est.)[8]']].set_index('Metropolitan area')
 population['Population (2016 est.)[8]'] = pd.to_numeric(population['Population (2016 est.)[8]'].str.replace(',', ''))
+
+
+
+def get_area(team):
+    """Map an NHL team name to its corresponding metropolitan area."""
+    for each in list(nhl_cities.index.values):
+        if team in each:
+            return nhl_cities.at[each, 'Metropolitan area']
+        
+# Clean NHL data
+nhl_2018['team'] = nhl_2018['team'].apply(lambda x: x[:-1].strip() if str(x).endswith("*") else str(x).strip())
+nhl_2018['Metropolitan area'] = nhl_2018['team'].apply(lambda x: get_area(x.split(" ")[-1]))
 
 ##################################################################
             ## Compute win/loss ratio per metro area
