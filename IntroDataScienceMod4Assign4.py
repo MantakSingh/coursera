@@ -73,3 +73,4 @@ def nhl_correlation():
     
     corr_tup = stats.pearsonr(population_by_region, win_loss_by_region)  # return only correlation coefficient
     return corr_tup[0]
+nhl_correlation()
