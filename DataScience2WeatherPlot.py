@@ -2,6 +2,11 @@ import matplotlib.pyplot as plt
 from calendar import month_abbr
 import numpy as np
 
+######################
+    # Import Data
+######################
+
+# Import main df
 df = pd.read_csv('assets/fb441e62df2d58994928907a91895ec62c2c42e6cd075c2700843b89.csv')
 
 # Cleaning main dataframe
@@ -12,12 +17,16 @@ df["Data_Value"] = df["Data_Value"].apply(lambda x: x/10)
 TMAX_df = df[df['Element'] == 'TMAX']
 TMIN_df = df[df['Element'] == 'TMIN']
 
+######################
+    # Decade Data
+######################
+
 # Create a DataFrame of maximum temperature by date
 tmax_decade = TMAX_df[(TMAX_df['Date'].dt.year >= 2005) & (TMAX_df['Date'].dt.year <= 2014)]
 tmax_decade = tmax_decade[tmax_decade['Date'].dt.strftime('%m-%d') != '02-29']
 tmax_grouped = tmax_decade.groupby('Date')['Data_Value'].mean().reset_index()
 
-# create a DataFrame of minimum temperatures by date
+# Create a DataFrame of minimum temperatures by date
 tmin_decade = TMIN_df[(TMIN_df['Date'].dt.year >= 2005) & (TMIN_df['Date'].dt.year <= 2014)]
 tmin_decade = tmin_decade[tmin_decade['Date'].dt.strftime('%m-%d') != '02-29']
 tmin_grouped = tmin_decade.groupby('Date')['Data_Value'].mean().reset_index()
@@ -29,7 +38,11 @@ tmin_grouped['month_day'] = tmin_grouped['Date'].dt.strftime('%m-%d')
 tmax_decade_max = tmax_grouped.groupby('month_day')['Data_Value'].max().reset_index()
 tmin_decade_min = tmin_grouped.groupby('month_day')['Data_Value'].min().reset_index()
 
-# calculate the minimum and maximum values for the years 2015
+######################
+     # 2015 Data
+######################
+
+# Calculate the minimum and maximum values for the year 2015
 tmax_2015 = TMAX_df[TMAX_df['Date'].dt.year == 2015]
 tmin_2015 = TMIN_df[TMIN_df['Date'].dt.year == 2015]
 
@@ -37,6 +50,7 @@ tmin_2015 = TMIN_df[TMIN_df['Date'].dt.year == 2015]
 tmax_2015 = tmax_2015[tmax_2015['Date'].dt.strftime('%m-%d') != '02-29']
 tmin_2015 = tmin_2015[tmin_2015['Date'].dt.strftime('%m-%d') != '02-29']
 
+# Create a month-day column for grouping
 tmax_2015['month_day'] = tmax_2015['Date'].dt.strftime('%m-%d')
 tmin_2015['month_day'] = tmin_2015['Date'].dt.strftime('%m-%d')
 
@@ -45,7 +59,7 @@ tmin_2015_daily = tmin_2015.groupby('month_day')['Data_Value'].mean().reset_inde
 
 
 ######################
-        ##Plot          
+        # Plot        
 ######################
 
 # Plot Basics
@@ -81,7 +95,7 @@ month_labels = [month_abbr[m.month] for m in months]
 month_ticks = [m.strftime('%m-%d') for m in months]
 plt.xticks(ticks=month_ticks, labels=month_labels, rotation=0)  # rotation optional
 
-## Actual Plotting
+# Actual Plotting
 plt.xlabel('Day of Year')
 plt.ylabel('Temperature (°C)')
 plt.title('Daily Temperature Records (2005–2014) vs. 2015 Temperature Records')
