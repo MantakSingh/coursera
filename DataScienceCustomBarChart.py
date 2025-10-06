@@ -13,6 +13,11 @@ df_index = df.index
 row_averages = df.mean(axis=1)
 
 ## Create plot
+
+user_y_input = input("What y-value do you want?")
+user_y_input = float(user_y_input)
+plt.axhline(y = user_y_input, color='b', linestyle='--', label='Horizontal Line at y=0.5')
+
 plt.bar(df_index, row_averages)
 plt.xlabel('Years')
 plt.xticks([1992,1993,1994,1995])
