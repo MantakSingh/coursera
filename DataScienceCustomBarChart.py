@@ -1,7 +1,11 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-## Load Data
+
+##############
+ # Load Data
+##############
+
 np.random.seed(12345)
 df = pd.DataFrame([np.random.normal(32000,200000,3650), 
                    np.random.normal(43000,100000,3650), 
@@ -11,30 +15,40 @@ df = pd.DataFrame([np.random.normal(32000,200000,3650),
 df_index = df.index
 row_averages = df.mean(axis=1)
 
-## Create plot
+##############
+ # User Input
+##############
 
-# Setting horizontal line based on user input
 user_y_input = input("What y-value do you want?")
 user_y_input = float(user_y_input)
-plt.axhline(y = user_y_input, color='b', linestyle='--', label='Horizontal Line at y=0.5')
+plt.axhline(y = user_y_input, color='b', linestyle='--')
 
-# Determining bar's relative position to line
-def cv(value):
-    if value == user_y_input:
-        return 'yellow'
-    elif value > user_y_input:
+##############
+ # Bar Color
+##############
+
+def color_for_value(value, threshold):
+    """Return bar color based on comparison to threshold."""
+    if value > threshold:
         return 'red'
-    else:
+    elif value < threshold:
         return 'blue'
+    return 'yellow'
     
 # Setting Colors
-bar_labels = ['1992', '1993', '1994', '1995']
-bar_colors = [cv(row_averages.loc[1992]), cv(row_averages.loc[1993]), cv(row_averages.loc[1994]), cv(row_averages.loc[1995])]
+bar_colors = [color_for_value(v, user_y_input) for v in row_averages]
 
-# Generating bar chart
-plt.bar(df_index, row_averages, label=bar_labels, color=bar_colors)
+##############
+    # Plot
+##############
+
+plt.bar(row_averages.index, row_averages, color=bar_colors)
+plt.axhline(y=user_y_input, color='black', linestyle='--', label=f'y = {user_y_input}')
+
 plt.title("Bar Chart")
 plt.xlabel('Years')
 plt.xticks([1992,1993,1994,1995])
 plt.ylabel('Values')
+plt.legend()
+plt.tight_layout()
 plt.show()
