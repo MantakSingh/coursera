@@ -51,8 +51,15 @@ plt.bar(
     color=bar_colors,
     yerr=sem_df,
     capsize=5,
-    ecolor='black')
-plt.axhline(y=user_y_input, color='black', linestyle='--', label=f'y = {user_y_input}')
+    ecolor='black'
+)
+
+plt.axhline(
+    y=user_y_input,
+    color='black',
+    linestyle='--',
+    label=f'y = {user_y_input}'
+)
 
 plt.title("Bar Chart")
 plt.xlabel('Years')
