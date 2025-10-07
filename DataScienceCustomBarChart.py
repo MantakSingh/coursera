@@ -14,7 +14,7 @@ df = pd.DataFrame([np.random.normal(32000,200000,3650),
                   index=[1992,1993,1994,1995])
 df_index = df.index
 row_averages = df.mean(axis=1)
-std_dev_df = df.sem(axis=1)  # Standard Error of Mean(Standard Deviation is huge)
+sem_df = df.sem(axis=1)  # Standard Error of Mean(Standard Deviation is huge)
 
 ##############
  # User Input
@@ -45,9 +45,14 @@ bar_colors = [color_for_value(v, user_y_input) for v in row_averages]
     # Plot
 ##############
 
-plt.bar(row_averages.index, row_averages, color=bar_colors)
+plt.bar(
+    row_averages.index,
+    row_averages,
+    color=bar_colors,
+    yerr=sem_df,
+    capsize=5,
+    ecolor='black')
 plt.axhline(y=user_y_input, color='black', linestyle='--', label=f'y = {user_y_input}')
-plt.errorbar(row_averages.index, row_averages, yerr=std_dev_df, fmt="", color="r", capthick = 1)
 
 plt.title("Bar Chart")
 plt.xlabel('Years')
