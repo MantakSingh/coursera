@@ -7,10 +7,11 @@ import matplotlib as plt
 female_homicide_df = pd.read_excel(r"C:\Users\kensi\Downloads\Intentional homicide victims by sex, counts and ra.xls", skiprows = 1)
 female_homicide_cleaned_df = female_homicide_df[female_homicide_df['Sex'] == 'Female']
 
-year_columns = [str(year) for year in range(2000, 2024)]
-
+# Need Percentage of Homicides to do correlation with the contraception rates
 female_homicide_rates_df = pd.DataFrame()
 female_homicide_rates_df["Country"] = female_homicide_cleaned_df["Country"]
+# Years for Homicide Percentage
+year_columns = [str(year) for year in range(2000, 2024)]
 
 for year in year_columns:
     count_col = year        # deaths
@@ -25,5 +26,6 @@ for year in year_columns:
         female_homicide_rates_df[year] = np.nan
 
 
-contraceptive_prevalence_df = pd.read_excel(r"C:\Users\kensi\Downloads\Contraceptive Prevalence Method.xls")
-print(female_homicide_rates_df)
+contraceptive_prevalence_df = pd.read_excel(r"C:\Users\kensi\Downloads\Contraceptive Prevalence Method.xls", skiprows = 3)
+contraceptive_prevalence_df = contraceptive_prevalence_df[["Country", "Year(s)", "Any method"]]
+print(contraceptive_prevalence_df)
