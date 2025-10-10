@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot  as plt
 import re
 
-## Load Data
-
+##############
+ ## Load Data
+##############
 # Load Female homicide data
 female_homicide_df = pd.read_excel(r"C:\Users\kensi\Downloads\Intentional homicide victims by sex, counts and ra.xls", skiprows = 1)
 female_homicide_cleaned_df = female_homicide_df[female_homicide_df['Sex'] == 'Female']
@@ -71,4 +72,33 @@ def expand_year_ranges(df):
     
 contraceptive_prevalence_df = expand_year_ranges(contraceptive_prevalence_df)
 
-print(contraceptive_prevalence_df)
+# Convert columns to numeric safely
+contraceptive_prevalence_df["Year(s)"] = pd.to_numeric(contraceptive_prevalence_df["Year(s)"], errors="coerce")
+contraceptive_prevalence_df["Any method"] = pd.to_numeric(contraceptive_prevalence_df["Any method"], errors="coerce")
+
+contraceptive_prevalence_df = contraceptive_prevalence_df.replace([np.inf, -np.inf], np.nan).dropna(subset=["Year(s)", "Any method"])
+
+##############
+    # Plot
+##############
+
+# Ensure we have valid numeric data
+
+x = contraceptive_prevalence_df["Year(s)"].astype(float)
+y = contraceptive_prevalence_df["Any method"].astype(float)
+
+# Fit a 1st degree polynomial (a straight line)
+m, b = np.polyfit(x, y, 1)
+
+# Plot scatter points
+plt.scatter(x, y, label="Data", alpha=0.6)
+
+# Plot trendline
+plt.plot(x, m * x + b, color="red", label="Trendline", linewidth=2)
+
+# Titles and labels
+plt.title("UN Contraceptive Use Percentage Data")
+plt.xlabel("Year")
+plt.ylabel("Contraceptive Use (%)")
+plt.legend()
+plt.show()
