@@ -102,3 +102,7 @@ plt.xlabel("Year")
 plt.ylabel("Contraceptive Use (%)")
 plt.legend()
 plt.show()
+
+def show_homicide():
+    return female_homicide_rates_df
+show_homicide()
