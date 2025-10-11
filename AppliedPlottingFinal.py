@@ -29,6 +29,17 @@ for year in year_columns:
     else:
         female_homicide_rates_df[year] = np.nan ## Error prevention
 
+female_homicide_rates_df["Country"] = female_homicide_rates_df["Country"].replace({
+    "United Kingdom (Scotland)": "United Kingdom",
+    "United Kingdom (Northern Ireland)": "United Kingdom",
+    "United Kingdom (England and Wales)": "United Kingdom",
+    "Netherlands (Kingdom of the)": "Netherlands",
+    "Türkiye": "Turkey"
+})
+
+# Step 2: Aggregate
+female_homicide_rates_df = female_homicide_rates_df.groupby("Country", as_index=False).sum()
+
 # Load Contraceptive data
 contraceptive_prevalence_df = pd.read_excel(r"C:\Users\kensi\Downloads\Contraceptive Prevalence Method.xls", skiprows = 3)
 contraceptive_prevalence_df = contraceptive_prevalence_df[["Country", "Year(s)", "Any method"]]
@@ -78,12 +89,17 @@ contraceptive_prevalence_df["Contraceptive Use Percentage"] = pd.to_numeric(cont
 
 contraceptive_prevalence_df = contraceptive_prevalence_df.replace([np.inf, -np.inf], np.nan).dropna(subset=["Year(s)", "Contraceptive Use Percentage"])
 
+contraceptive_prevalence_df.rename(
+    index={
+        'China, Hong Kong SAR': 'Hong Kong',
+        'The former Yugoslav Republic of Macedonia': 'North Macedonia'
+        }, inplace=True)
 ##############
     # Plot
 ##############
 
 # Ensure we have valid numeric data
-
+'''
 x = contraceptive_prevalence_df["Year(s)"].astype(float)
 y = contraceptive_prevalence_df["Contraceptive Use Percentage"].astype(float)
 
@@ -101,5 +117,6 @@ plt.title("UN Contraceptive Use Percentage Data")
 plt.xlabel("Year")
 plt.ylabel("Contraceptive Use (%)")
 plt.legend()
-plt.show()
-print(contraceptive_prevalence_df)
+plt.show()'''
+merged_df = pd.merge(female_homicide_rates_df, contraceptive_prevalence_df, how = 'outer')
+print(merged_df)
