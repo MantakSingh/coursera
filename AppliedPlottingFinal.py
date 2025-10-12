@@ -37,13 +37,19 @@ female_homicide_rates_df["Country"] = female_homicide_rates_df["Country"].replac
     "Türkiye": "Turkey"
 })
 
-# Step 2: Aggregate
+# Aggregate
 female_homicide_rates_df = female_homicide_rates_df.groupby("Country", as_index=False).sum()
+
+# Create new row for the means of each year
+mean_row = female_homicide_rates_df.mean(numeric_only=True)
+mean_row.name = 'Mean'
+female_homicide_rates_df = pd.concat([female_homicide_rates_df, pd.DataFrame([mean_row])], ignore_index=False)
 
 # Load Contraceptive data
 contraceptive_prevalence_df = pd.read_excel(r"C:\Users\kensi\Downloads\Contraceptive Prevalence Method.xls", skiprows = 3)
 contraceptive_prevalence_df = contraceptive_prevalence_df[["Country", "Year(s)", "Any method"]]
 contraceptive_prevalence_df.rename(columns={'Any method': 'Contraceptive Use Percentage'}, inplace=True)
+
 def expand_year_ranges(df):
     expanded_rows = []
 
@@ -94,6 +100,13 @@ contraceptive_prevalence_df.rename(
         'China, Hong Kong SAR': 'Hong Kong',
         'The former Yugoslav Republic of Macedonia': 'North Macedonia'
         }, inplace=True)
+
+contraceptive_prevalence_df['Mean Contraceptive Use (%)'] = (
+    contraceptive_prevalence_df.groupby('Year(s)')['Contraceptive Use Percentage']
+      .transform('mean')
+)
+    
+
 ##############
     # Plot
 ##############
@@ -118,5 +131,22 @@ plt.xlabel("Year")
 plt.ylabel("Contraceptive Use (%)")
 plt.legend()
 plt.show()'''
-merged_df = pd.merge(female_homicide_rates_df, contraceptive_prevalence_df, how = 'outer')
-print(merged_df)
+merged_df = pd.DataFrame(columns=female_homicide_rates_df.columns)
+merged_df.drop('Country', axis = 'columns', inplace=True)
+merged_df.loc['Female Homicide Percentage Mean'] = female_homicide_rates_df.loc['Mean']
+
+# Flip the columns to the index
+merged_series = merged_df.loc['Female Homicide Percentage Mean']
+merged_df = merged_series.reset_index()
+
+yearly_mean_series = (
+    contraceptive_prevalence_df.groupby('Year(s)')['Contraceptive Use Percentage']
+      .mean()
+)
+yearly_mean_df = yearly_mean_series.reset_index() 
+yearly_mean_df.set_index('Year(s)',inplace= True)
+
+#merged_df = merged_df.join(yearly_mean_df)
+
+for value in yearly_mean_df.index:
+    print(type(value))
