@@ -3,6 +3,11 @@ import numpy as np
 import matplotlib.pyplot  as plt
 import re
 
+'''
+This program plots the correlation between rates of female homicide and rates of contraceptive usage. My hypothesis is that as contraceptive use increases,
+female homicide rates decrease. The idea being that higher contraceptive usage indicates societies that value women more highly. As of right now, my code
+only operates globally. However, I want to write a function that does a groupby function for each specific nation based on user input.
+'''
 ##############
  ## Load Data
 ##############
