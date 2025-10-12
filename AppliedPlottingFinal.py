@@ -106,13 +106,31 @@ contraceptive_prevalence_df['Mean Contraceptive Use (%)'] = (
       .transform('mean')
 )
     
+merged_df = pd.DataFrame(columns=female_homicide_rates_df.columns)
+merged_df.drop('Country', axis = 'columns', inplace=True)
+merged_df.loc['Female Homicide Percentage Mean'] = female_homicide_rates_df.loc['Mean']
+
+# Flip the columns to the index
+merged_series = merged_df.loc['Female Homicide Percentage Mean'] # This is only temporary / I'm not using this again
+merged_df = merged_series.reset_index() # Make it into a dataframe
+merged_df.set_index('index', inplace= True) # Make the column an index
+merged_df.index = merged_df.index.astype(int) # Fix the type
+yearly_mean_series = (
+    contraceptive_prevalence_df.groupby('Year(s)')['Contraceptive Use Percentage']
+      .mean()
+)
+
+yearly_mean_df = yearly_mean_series.reset_index() 
+yearly_mean_df.set_index('Year(s)',inplace= True)
+
+merged_df = merged_df.join(yearly_mean_df)
 
 ##############
     # Plot
 ##############
 
 # Ensure we have valid numeric data
-'''
+
 x = contraceptive_prevalence_df["Year(s)"].astype(float)
 y = contraceptive_prevalence_df["Contraceptive Use Percentage"].astype(float)
 
@@ -130,23 +148,4 @@ plt.title("UN Contraceptive Use Percentage Data")
 plt.xlabel("Year")
 plt.ylabel("Contraceptive Use (%)")
 plt.legend()
-plt.show()'''
-merged_df = pd.DataFrame(columns=female_homicide_rates_df.columns)
-merged_df.drop('Country', axis = 'columns', inplace=True)
-merged_df.loc['Female Homicide Percentage Mean'] = female_homicide_rates_df.loc['Mean']
-
-# Flip the columns to the index
-merged_series = merged_df.loc['Female Homicide Percentage Mean']
-merged_df = merged_series.reset_index()
-
-yearly_mean_series = (
-    contraceptive_prevalence_df.groupby('Year(s)')['Contraceptive Use Percentage']
-      .mean()
-)
-yearly_mean_df = yearly_mean_series.reset_index() 
-yearly_mean_df.set_index('Year(s)',inplace= True)
-
-#merged_df = merged_df.join(yearly_mean_df)
-
-for value in yearly_mean_df.index:
-    print(type(value))
+plt.show()
