@@ -6,6 +6,7 @@ import re
 ##############
  ## Load Data
 ##############
+
 # Load Female homicide data
 female_homicide_df = pd.read_excel(r"C:\Users\kensi\Downloads\Intentional homicide victims by sex, counts and ra.xls", skiprows = 1)
 female_homicide_cleaned_df = female_homicide_df[female_homicide_df['Sex'] == 'Female']
@@ -124,28 +125,35 @@ yearly_mean_df = yearly_mean_series.reset_index()
 yearly_mean_df.set_index('Year(s)',inplace= True)
 
 merged_df = merged_df.join(yearly_mean_df)
+merged_df = merged_df.dropna()
 
 ##############
     # Plot
 ##############
 
-# Ensure we have valid numeric data
+# Make a copy to be safe
+plot_df = merged_df.copy()
 
-x = contraceptive_prevalence_df["Year(s)"].astype(float)
-y = contraceptive_prevalence_df["Contraceptive Use Percentage"].astype(float)
+# Ensure numeric and drop invalid rows
+plot_df = plot_df.apply(pd.to_numeric, errors='coerce').dropna(subset=["Contraceptive Use Percentage", "Female Homicide Percentage Mean"])
 
-# Fit a 1st degree polynomial (a straight line)
+# Extract x and y as floats
+x = plot_df["Contraceptive Use Percentage"].values
+y = plot_df["Female Homicide Percentage Mean"].values
+
+# Fit linear trendline
 m, b = np.polyfit(x, y, 1)
 
-# Plot scatter points
-plt.scatter(x, y, label="Data", alpha=0.6)
+# Compute correlation
+corr = np.corrcoef(x, y)[0,1]
 
-# Plot trendline
-plt.plot(x, m * x + b, color="red", label="Trendline", linewidth=2)
-
-# Titles and labels
-plt.title("UN Contraceptive Use Percentage Data")
-plt.xlabel("Year")
-plt.ylabel("Contraceptive Use (%)")
+# Plot
+plt.figure(figsize=(8,6))
+plt.scatter(x, y, alpha=0.7, color='blue', label='Data points')
+plt.plot(x, m*x + b, color='red', linewidth=2, label=f'Trendline (r={corr:.3f})')
+plt.xlabel("Contraceptive Use Percentage")
+plt.ylabel("Female Homicide Percentage Mean")
+plt.title("Correlation: Female Homicide Rate vs Contraceptive Use")
 plt.legend()
+plt.grid(True, linestyle='--', alpha=0.5)
 plt.show()
