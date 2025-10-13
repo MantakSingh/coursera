@@ -141,15 +141,23 @@ def select_country(desired_country: str):
     # Clean contraceptive dataframe
     selected_contraceptive_df.drop(["Mean Contraceptive Use (%)", "Country"], axis = 1, inplace= True) # Drop Global mean & Country column
     selected_contraceptive_df = selected_contraceptive_df.T # Flip the Dataframe
+    selected_contraceptive_df.columns = selected_contraceptive_df.loc['Year(s)']
+    selected_contraceptive_df.drop(index = "Year(s)", inplace= True)
+    selected_contraceptive_df.columns = selected_contraceptive_df.columns.astype(int) # Fix the type
+    selected_contraceptive_df = selected_contraceptive_df.T
 
     # Clean homicide dataframe
-    selected_homicide_df.drop("Country", axis = 1, inplace = True)
+    selected_homicide_df = selected_homicide_df.T
+    selected_homicide_df.columns = selected_homicide_df.iloc[0]
+    selected_homicide_df.drop("Country", axis = 0, inplace = True)
+    selected_homicide_df.columns = ["Rate of Female Homicide"]
+    selected_homicide_df.index.name = 'Year(s)'
     # Create the new merged dataframe
-    desired_df = pd.DataFrame(columns=selected_homicide_df.columns)
+    desired_df = pd.merge(df1, on=list(set(df).intersection(set(df1)) | {'idx'}))
 
 
     # Return a dataframe for the plot function
-    return selected_homicide_df
+    return desired_df
 
 
 
