@@ -106,11 +106,10 @@ contraceptive_prevalence_df["Contraceptive Use Percentage"] = pd.to_numeric(cont
 
 contraceptive_prevalence_df = contraceptive_prevalence_df.replace([np.inf, -np.inf], np.nan).dropna(subset=["Year(s)", "Contraceptive Use Percentage"])
 
-contraceptive_prevalence_df.rename(
-    index={
-        'China, Hong Kong SAR': 'Hong Kong',
-        'The former Yugoslav Republic of Macedonia': 'North Macedonia'
-        }, inplace=True)
+contraceptive_prevalence_df["Country"].replace({
+    'China, Hong Kong SAR': 'Hong Kong',
+    'The former Yugoslav Republic of Macedonia': 'North Macedonia'
+}, inplace=True)
 
 contraceptive_prevalence_df['Mean Contraceptive Use (%)'] = (
     contraceptive_prevalence_df.groupby('Year(s)')['Contraceptive Use Percentage']
@@ -201,9 +200,15 @@ contraceptive_countries = contraceptive_prevalence_df["Country"]
 contraceptive_countries = contraceptive_countries.unique()
 contraceptive_countries = pd.Series(contraceptive_countries) # Turn NumPy Array back into a Pandas Series
 contraceptive_countries.name = 'Country'
+contraceptive_countries = contraceptive_countries.dropna()
 
 homicide_countries = homicide_countries.shift(-1)
 homicide_countries.drop(index = [157, 'Mean'], inplace= True)
-differences = homicide_countries.compare(contraceptive_countries)
+#differences = homicide_countries.compare(contraceptive_countries)
+homicide_countries = homicide_countries.dropna()
 
-print(differences)
+missing_countries = []
+for value in homicide_countries:
+    if value not in contraceptive_countries.values:
+        missing_countries.append(value)
+print(contraceptive_countries)
