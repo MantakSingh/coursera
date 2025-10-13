@@ -109,12 +109,15 @@ contraceptive_prevalence_df = contraceptive_prevalence_df.replace([np.inf, -np.i
 contraceptive_prevalence_df["Country"].replace({
     'China, Hong Kong SAR': 'Hong Kong',
     'The former Yugoslav Republic of Macedonia': 'North Macedonia'
-}, inplace=True)
+}, inplace=True
+)
 
 contraceptive_prevalence_df['Mean Contraceptive Use (%)'] = (
     contraceptive_prevalence_df.groupby('Year(s)')['Contraceptive Use Percentage']
       .transform('mean')
 )
+
+## Global variables
 
 # Global merged dataframe
 merged_df = pd.DataFrame(columns=female_homicide_rates_df.columns)
@@ -136,12 +139,37 @@ yearly_mean_df.set_index('Year(s)',inplace= True)
 
 merged_df = merged_df.join(yearly_mean_df)
 merged_df = merged_df.dropna()
+    
+# Turn the countries of each Dataframe into a series
+homicide_countries = female_homicide_rates_df["Country"]
+contraceptive_countries = contraceptive_prevalence_df["Country"]
 
-def select_country(desired_country: str):
+# Group repeating countries into single entries
+contraceptive_countries = contraceptive_countries.unique()
+contraceptive_countries = pd.Series(contraceptive_countries) # Turn NumPy Array back into a Pandas Series
+contraceptive_countries.name = 'Country'
+contraceptive_countries = contraceptive_countries.dropna()
+
+homicide_countries = homicide_countries.shift(-1)
+homicide_countries.drop(index = [157, 'Mean'], inplace= True)
+
+homicide_countries = homicide_countries.dropna()
+
+missing_in_contraceptive = set(homicide_countries.dropna()) - set(contraceptive_countries.dropna())
+missing_in_homicide = set(contraceptive_countries.dropna()) - set(homicide_countries.dropna())
+
+missing_countries = []
+for value in homicide_countries:
+    if value not in contraceptive_countries.values:
+        missing_countries.append(value)
+
+def show_plot(selected_country: str):
+
+    ## Create shared dataframe
 
     # Filter dataframes by desired country
-    selected_contraceptive_df = contraceptive_prevalence_df[contraceptive_prevalence_df['Country']==desired_country]
-    selected_homicide_df = female_homicide_rates_df[female_homicide_rates_df["Country"]==desired_country]
+    selected_contraceptive_df = contraceptive_prevalence_df[contraceptive_prevalence_df['Country']==selected_country]
+    selected_homicide_df = female_homicide_rates_df[female_homicide_rates_df["Country"]==selected_country]
     
     # Clean contraceptive dataframe
     selected_contraceptive_df.drop(["Mean Contraceptive Use (%)", "Country"], axis = 1, inplace= True) # Drop Global mean & Country column
@@ -158,15 +186,14 @@ def select_country(desired_country: str):
     selected_homicide_df.columns = ['Female Homicide Percentage Mean']
     selected_homicide_df.index.name = 'Year(s)'
     selected_homicide_df.index = selected_homicide_df.index.astype(int) # Fix Index data type
+
     # Create the new merged dataframe
     desired_df = pd.merge( selected_homicide_df, selected_contraceptive_df, left_index=True, right_index=True)
 
-    # Return a dataframe for the plot function
-    return desired_df
+    ## Plot
 
-def plot_corr(df):
     # Make a copy to be safe
-    plot_df = df.copy()
+    plot_df = desired_df.copy()
 
     # Ensure numeric values and dropping invalid rows
     plot_df = plot_df.apply(pd.to_numeric, errors='coerce').dropna(subset=["Contraceptive Use Percentage", "Female Homicide Percentage Mean"])
@@ -179,36 +206,20 @@ def plot_corr(df):
     m, b = np.polyfit(x, y, 1)
 
     # Compute correlation
-    corr = np.corrcoef(x, y)[0,1]
-
+    #corr = np.corrcoef(x, y)[0,1]
+    corr = plot_df.corr()
+    return corr
+    '''
     # Plot
     plt.figure(figsize=(8,6))
     plt.scatter(x, y, alpha=0.7, color='blue', label='Data points')
     plt.plot(x, m*x + b, color='red', linewidth=2, label=f'Trendline (r={corr:.3f})')
     plt.xlabel("Contraceptive Use Percentage")
     plt.ylabel("Female Homicide Percentage Mean")
-    plt.title("Correlation: Female Homicide Rate vs Contraceptive Use")
+    plt.title(f"Correlation: Female Homicide Rate vs Contraceptive Use for {selected_country}")
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
+    '''
 
-# Turn the countries of each Dataframe into a series
-homicide_countries = female_homicide_rates_df["Country"]
-contraceptive_countries = contraceptive_prevalence_df["Country"]
-
-# Group repeating countries into single entries
-contraceptive_countries = contraceptive_countries.unique()
-contraceptive_countries = pd.Series(contraceptive_countries) # Turn NumPy Array back into a Pandas Series
-contraceptive_countries.name = 'Country'
-contraceptive_countries = contraceptive_countries.dropna()
-
-homicide_countries = homicide_countries.shift(-1)
-homicide_countries.drop(index = [157, 'Mean'], inplace= True)
-#differences = homicide_countries.compare(contraceptive_countries)
-homicide_countries = homicide_countries.dropna()
-
-missing_countries = []
-for value in homicide_countries:
-    if value not in contraceptive_countries.values:
-        missing_countries.append(value)
-print(contraceptive_countries)
+show_plot('United Kingdom')
