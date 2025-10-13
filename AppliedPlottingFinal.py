@@ -196,12 +196,14 @@ def plot_corr(df):
 # Turn the countries of each Dataframe into a series
 homicide_countries = female_homicide_rates_df["Country"]
 contraceptive_countries = contraceptive_prevalence_df["Country"]
+
+# Group repeating countries into single entries
 contraceptive_countries = contraceptive_countries.unique()
-contraceptive_countries = pd.Series(contraceptive_countries)
-# Turn the series back into Dataframes
-#homicide_countries = homicide_countries.reset_index()
-#contraceptive_countries = contraceptive_countries.reset_index()
+contraceptive_countries = pd.Series(contraceptive_countries) # Turn NumPy Array back into a Pandas Series
+contraceptive_countries.name = 'Country'
 
-#differences = homicide_countries.compare(contraceptive_countries)
+homicide_countries = homicide_countries.shift(-1)
+homicide_countries.drop(index = [157, 'Mean'], inplace= True)
+differences = homicide_countries.compare(contraceptive_countries)
 
-print(contraceptive_countries)
+print(differences)
