@@ -195,5 +195,4 @@ def plot_corr(df):
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
 
-afghan_homicides = female_homicide_rates_df[female_homicide_rates_df["Country"]== "Afghanistan"]
 plot_corr(select_country("United Kingdom"))
