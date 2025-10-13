@@ -3,6 +3,12 @@ import numpy as np
 import matplotlib.pyplot  as plt
 import re
 
+# Set options to display all rows and columns
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None) # Adjust for wider output
+pd.set_option('display.max_colwidth', None) # Display full content of cells
+
 '''
 This program plots the correlation between rates of female homicide and rates of contraceptive usage. My hypothesis is that as contraceptive use increases,
 female homicide rates decrease. The idea being that higher contraceptive usage indicates societies that value women more highly. As of right now, my code
@@ -190,4 +196,4 @@ def plot_corr(df):
     plt.show()
 
 afghan_homicides = female_homicide_rates_df[female_homicide_rates_df["Country"]== "Afghanistan"]
-print(afghan_homicides)
+plot_corr(select_country("United Kingdom"))
