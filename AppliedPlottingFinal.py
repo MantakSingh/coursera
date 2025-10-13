@@ -132,7 +132,24 @@ yearly_mean_df.set_index('Year(s)',inplace= True)
 merged_df = merged_df.join(yearly_mean_df)
 merged_df = merged_df.dropna()
 
-def select_country(country: str):
+def select_country(desired_country: str):
+
+    # Filter dataframes by desired country
+    selected_contraceptive_df = contraceptive_prevalence_df[contraceptive_prevalence_df['Country']==desired_country]
+    selected_homicide_df = female_homicide_rates_df[female_homicide_rates_df["Country"]==desired_country]
+    
+    # Clean contraceptive dataframe
+    selected_contraceptive_df.drop(["Mean Contraceptive Use (%)", "Country"], axis = 1, inplace= True) # Drop Global mean & Country column
+    selected_contraceptive_df = selected_contraceptive_df.T # Flip the Dataframe
+
+    # Clean homicide dataframe
+    selected_homicide_df.drop("Country", axis = 1, inplace = True)
+    # Create the new merged dataframe
+    desired_df = pd.DataFrame(columns=selected_homicide_df.columns)
+
+
+    # Return a dataframe for the plot function
+    return selected_homicide_df
 
 
 
@@ -163,4 +180,4 @@ def plot_corr(df):
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
-print(contraceptive_prevalence_df)
+print(select_country('Afghanistan'))
