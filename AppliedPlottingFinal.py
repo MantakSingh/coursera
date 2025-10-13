@@ -150,11 +150,11 @@ def select_country(desired_country: str):
     selected_homicide_df = selected_homicide_df.T
     selected_homicide_df.columns = selected_homicide_df.iloc[0]
     selected_homicide_df.drop("Country", axis = 0, inplace = True)
-    selected_homicide_df.columns = ["Rate of Female Homicide"]
+    selected_homicide_df.columns = ['Female Homicide Percentage Mean']
     selected_homicide_df.index.name = 'Year(s)'
+    selected_homicide_df.index = selected_homicide_df.index.astype(int) # Fix Index data type
     # Create the new merged dataframe
-    desired_df = pd.merge(df1, on=list(set(df).intersection(set(df1)) | {'idx'}))
-
+    desired_df = pd.merge( selected_homicide_df, selected_contraceptive_df, left_index=True, right_index=True)
 
     # Return a dataframe for the plot function
     return desired_df
@@ -188,4 +188,4 @@ def plot_corr(df):
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
-print(select_country('Afghanistan'))
+
