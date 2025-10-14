@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot  as plt
-
+import tkinter import *
 '''
 This program plots the correlation between rates of female homicide and rates of contraceptive usage. My hypothesis is that as contraceptive use increases,
 female homicide rates decrease. The idea being that higher contraceptive usage indicates societies that value women more highly. 
@@ -9,6 +9,8 @@ female homicide rates decrease. The idea being that higher contraceptive usage i
 ##############
  ## Load Data
 ##############
+root = tkinter.Tk(screenName=None, baseName=None, className='Tk', useTk=1)
+
 
 # Load Female homicide data
 female_homicide_df = pd.read_excel(r"C:\Users\kensi\Downloads\Intentional homicide victims by sex, counts and ra.xls", skiprows = 1)
@@ -203,21 +205,17 @@ def show_plot(selected_country: str):
     corr = corr.iloc[0,1]
     
     # Plot
-    if corr.isnan():
-        print("There's no correlation!")
-    else:
-        plt.figure(figsize=(8,6))
-        plt.scatter(x, y, alpha=0.7, color='blue', label='Data points')
-        plt.plot(x, m*x + b, color='red', linewidth=2, label=f'Trendline (r={corr})')
-        plt.xlabel("Contraceptive Use Percentage")
-        plt.ylabel("Female Homicide Percentage Mean")
-        plt.title(f"Correlation: Female Homicide Rate vs Contraceptive Use for {selected_country}")
-        plt.legend()
-        plt.grid(True, linestyle='--', alpha=0.5)
-        plt.show()
-show_plot('Algeria')
-    
-    
+  
+    plt.figure(figsize=(8,6))
+    plt.scatter(x, y, alpha=0.7, color='blue', label='Data points')
+    plt.plot(x, m*x + b, color='red', linewidth=2, label=f'Trendline (r={corr})')
+    plt.xlabel("Contraceptive Use Percentage")
+    plt.ylabel("Female Homicide Percentage Mean")
+    plt.title(f"Correlation: Female Homicide Rate vs Contraceptive Use for {selected_country}")
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.5)
+    plt.show()
+   
 
 
 
