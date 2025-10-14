@@ -199,19 +199,25 @@ def show_plot(selected_country: str):
     m, b = np.polyfit(x, y, 1)
 
     # Compute correlation
- 
     corr = plot_df.corr(method="pearson")
     corr = corr.iloc[0,1]
-
+    
     # Plot
-    plt.figure(figsize=(8,6))
-    plt.scatter(x, y, alpha=0.7, color='blue', label='Data points')
-    plt.plot(x, m*x + b, color='red', linewidth=2, label=f'Trendline (r={corr})')
-    plt.xlabel("Contraceptive Use Percentage")
-    plt.ylabel("Female Homicide Percentage Mean")
-    plt.title(f"Correlation: Female Homicide Rate vs Contraceptive Use for {selected_country}")
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.5)
-    plt.show()
+    if corr.isnan():
+        print("There's no correlation!")
+    else:
+        plt.figure(figsize=(8,6))
+        plt.scatter(x, y, alpha=0.7, color='blue', label='Data points')
+        plt.plot(x, m*x + b, color='red', linewidth=2, label=f'Trendline (r={corr})')
+        plt.xlabel("Contraceptive Use Percentage")
+        plt.ylabel("Female Homicide Percentage Mean")
+        plt.title(f"Correlation: Female Homicide Rate vs Contraceptive Use for {selected_country}")
+        plt.legend()
+        plt.grid(True, linestyle='--', alpha=0.5)
+        plt.show()
+show_plot('Algeria')
+    
+    
 
-show_plot('United Kingdom')
+
+
