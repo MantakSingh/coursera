@@ -149,15 +149,33 @@ merged_df = merged_df.join(yearly_mean_df)
 merged_df = merged_df.dropna()
 
 def show_plot(selected_country: str):
-    global ax, canvas # Load the existing plot
+    global ax, canvas  # Load the existing plot
     ax.clear()  # Clear previous graphs
 
     # Filter dataframes by desired country
-    selected_contraceptive_df = contraceptive_prevalence_df[contraceptive_prevalence_df['Country']==selected_country]
-    selected_homicide_df = female_homicide_rates_df[female_homicide_rates_df["Country"]==selected_country]
+    selected_contraceptive_df = contraceptive_prevalence_df[
+        contraceptive_prevalence_df['Country'] == selected_country
+    ]
+    selected_homicide_df = female_homicide_rates_df[
+        female_homicide_rates_df["Country"] == selected_country
+    ]
     
+    # If no data found in either dataframe
+    if selected_contraceptive_df.empty or selected_homicide_df.empty:
+        ax.text(
+            0.5, 0.5,
+            f"Insufficient data for {selected_country}",
+            ha='center', va='center',
+            fontsize=14, color='red', style='italic'
+        )
+        ax.set_title(f"{selected_country}: Insufficient Data")
+        canvas.draw()
+        return
+
     # Clean contraceptive dataframe
-    selected_contraceptive_df = selected_contraceptive_df.drop(["Mean Contraceptive Use (%)", "Country"], axis=1).T
+    selected_contraceptive_df = selected_contraceptive_df.drop(
+        ["Mean Contraceptive Use (%)", "Country"], axis=1
+    ).T
     selected_contraceptive_df.columns = selected_contraceptive_df.loc['Year(s)']
     selected_contraceptive_df = selected_contraceptive_df.drop("Year(s)")
     selected_contraceptive_df.columns = selected_contraceptive_df.columns.astype(int)
@@ -171,15 +189,46 @@ def show_plot(selected_country: str):
     selected_homicide_df.index = selected_homicide_df.index.astype(int)
     
     # Merge data
-    desired_df = pd.merge(selected_homicide_df, selected_contraceptive_df, left_index=True, right_index=True)
-    plot_df = desired_df.apply(pd.to_numeric, errors='coerce').dropna(subset=["Contraceptive Use Percentage", "Female Homicide Percentage Mean"])
-    
+    desired_df = pd.merge(
+        selected_homicide_df, selected_contraceptive_df,
+        left_index=True, right_index=True
+    )
+    plot_df = desired_df.apply(pd.to_numeric, errors='coerce').dropna(
+        subset=["Contraceptive Use Percentage", "Female Homicide Percentage Mean"]
+    )
+
+    # Check for insufficient data
+    if plot_df.shape[0] < 2:
+        ax.text(
+            0.5, 0.5,
+            f"Insufficient data for {selected_country}",
+            ha='center', va='center',
+            fontsize=14, color='red', style='italic'
+        )
+        ax.set_title(f"{selected_country}: Insufficient Data")
+        canvas.draw()
+        return
+
     x = plot_df["Contraceptive Use Percentage"].values
     y = plot_df["Female Homicide Percentage Mean"].values
-    m, b = np.polyfit(x, y, 1)
-    corr = np.corrcoef(x, y)[0,1]
 
-    # Plot on existing axes
+    try:
+        m, b = np.polyfit(x, y, 1)
+        corr = np.corrcoef(x, y)[0, 1]
+        if np.isnan(corr) or np.isnan(m):
+            raise ValueError("Invalid trendline or correlation")
+    except Exception:
+        ax.text(
+            0.5, 0.5,
+            f"Insufficient data for {selected_country}",
+            ha='center', va='center',
+            fontsize=14, color='red', style='italic'
+        )
+        ax.set_title(f"{selected_country}: Insufficient Data")
+        canvas.draw()
+        return
+
+    # Plot valid data
     ax.scatter(x, y, alpha=0.7, color='blue', label='Data points')
     ax.plot(x, m*x + b, color='red', linewidth=2, label=f'Trendline (r={corr:.2f})')
     ax.set_xlabel("Contraceptive Use Percentage")
