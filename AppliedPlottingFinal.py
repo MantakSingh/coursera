@@ -1,16 +1,18 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot  as plt
-import tkinter import *
+import tkinter as tk
+from tkinter import ttk
 '''
 This program plots the correlation between rates of female homicide and rates of contraceptive usage. My hypothesis is that as contraceptive use increases,
 female homicide rates decrease. The idea being that higher contraceptive usage indicates societies that value women more highly. 
 '''
+
 ##############
  ## Load Data
 ##############
-root = tkinter.Tk(screenName=None, baseName=None, className='Tk', useTk=1)
 
+## Homicide Dataframe
 
 # Load Female homicide data
 female_homicide_df = pd.read_excel(r"C:\Users\kensi\Downloads\Intentional homicide victims by sex, counts and ra.xls", skiprows = 1)
@@ -20,9 +22,10 @@ female_homicide_cleaned_df = female_homicide_df[female_homicide_df['Sex'] == 'Fe
 female_homicide_rates_df = pd.DataFrame()
 female_homicide_rates_df["Country"] = female_homicide_cleaned_df["Country"]
 
-# Years for Homicide Percentage
+# Years for Homicide Percentage Dataframe
 year_columns = [str(year) for year in range(2000, 2024)]
 
+# Get the percentage of homicide rather than the rate for 100K
 for year in year_columns:
     count_col = year        # deaths
     rate_col = year + '.1'  # rate per 100,000
@@ -35,6 +38,7 @@ for year in year_columns:
     else:
         female_homicide_rates_df[year] = np.nan ## Error prevention
 
+# Rename Countries
 female_homicide_rates_df["Country"] = female_homicide_rates_df["Country"].replace({
     "United Kingdom (Scotland)": "United Kingdom",
     "United Kingdom (Northern Ireland)": "United Kingdom",
@@ -43,7 +47,7 @@ female_homicide_rates_df["Country"] = female_homicide_rates_df["Country"].replac
     "Türkiye": "Turkey"
 })
 
-# Aggregate
+# Merge the United Kingdom rows together
 female_homicide_rates_df = female_homicide_rates_df.groupby("Country", as_index=False).sum()
 
 # Create new row for the means of each year
@@ -51,11 +55,14 @@ mean_row = female_homicide_rates_df.mean(numeric_only=True)
 mean_row.name = 'Mean'
 female_homicide_rates_df = pd.concat([female_homicide_rates_df, pd.DataFrame([mean_row])], ignore_index=False)
 
-# Load Contraceptive data
+## Contraceptive Dataframe
+
+# Load the Contraceptive Dataframe 
 contraceptive_prevalence_df = pd.read_excel(r"C:\Users\kensi\Downloads\Contraceptive Prevalence Method.xls", skiprows = 3)
 contraceptive_prevalence_df = contraceptive_prevalence_df[["Country", "Year(s)", "Any method"]]
 contraceptive_prevalence_df.rename(columns={'Any method': 'Contraceptive Use Percentage'}, inplace=True)
 
+# Break up the hyphenated year ranges into multiple rows
 def expand_year_ranges(df):
     expanded_rows = []
 
@@ -93,6 +100,7 @@ def expand_year_ranges(df):
     expanded_df = pd.DataFrame(expanded_rows)
     return expanded_df.reset_index(drop=True)
     
+# Get rid of the hyphenated year ranges
 contraceptive_prevalence_df = expand_year_ranges(contraceptive_prevalence_df)
 
 # Convert columns to numeric safely
@@ -112,7 +120,9 @@ contraceptive_prevalence_df['Mean Contraceptive Use (%)'] = (
       .transform('mean')
 )
 
-## Global variables
+######################
+  # Global Variables
+######################
 
 # Global merged dataframe
 merged_df = pd.DataFrame(columns=female_homicide_rates_df.columns)
@@ -215,7 +225,46 @@ def show_plot(selected_country: str):
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
-   
 
 
+####################
+  # User Interface
+####################
+
+# Creating tkinter window
+window = tk.Tk()
+window.title('Correlation Program')
+window.geometry('500x250')
+
+# label text for title
+ttk.Label(window, text = "Correlation for Female Homicide Rates and Contraceptive Usage", 
+          background = 'green', foreground ="white", 
+          font = ("Times New Roman", 12)).grid(row = 0, column = 1)
+
+# label
+ttk.Label(window, text = "Select the Month :",
+          font = ("Times New Roman", 10)).grid(column = 0,
+          row = 5, padx = 10, pady = 25)
+
+# Combobox creation
+n = tk.StringVar()
+monthchoosen = ttk.Combobox(window, width = 27, textvariable = n)
+
+# Adding combobox drop down list
+monthchoosen['values'] = (' January', 
+                          ' February',
+                          ' March',
+                          ' April',
+                          ' May',
+                          ' June',
+                          ' July',
+                          ' August',
+                          ' September',
+                          ' October',
+                          ' November',
+                          ' December')
+
+monthchoosen.grid(column = 1, row = 5)
+monthchoosen.current(1)
+window.mainloop()
 
