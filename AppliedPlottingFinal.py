@@ -46,7 +46,14 @@ female_homicide_rates_df["Country"] = female_homicide_rates_df["Country"].replac
     "United Kingdom (Northern Ireland)": "United Kingdom",
     "United Kingdom (England and Wales)": "United Kingdom",
     "Netherlands (Kingdom of the)": "Netherlands",
-    "Türkiye": "Turkey"
+    "Türkiye": "Turkey",
+    "China, Hong Kong Special Administrative Region": "Hong Kong",
+    "China, Macao Special Administrative Region": "Macao",
+    "Czechia": "Czech Republic",
+    "Micronesia (Federated States of)": "Micronesia",
+    "Viet Nam": "Vietnam",
+    "Saint Pierre and Miquelon": "St. Pierre and Miquelon",
+    "Kosovo under UNSCR 1244": "Kosovo",
 })
 
 # Merge the United Kingdom rows together
@@ -111,11 +118,21 @@ contraceptive_prevalence_df["Contraceptive Use Percentage"] = pd.to_numeric(cont
 contraceptive_prevalence_df = contraceptive_prevalence_df.replace([np.inf, -np.inf], np.nan).dropna(subset=["Year(s)", "Contraceptive Use Percentage"])
 
 # Rename countries
-contraceptive_prevalence_df["Country"].replace({
-    'China, Hong Kong SAR': 'Hong Kong',
-    'The former Yugoslav Republic of Macedonia': 'North Macedonia'
-}, inplace=True
-)
+contraceptive_prevalence_df["Country"] = contraceptive_prevalence_df["Country"].replace({
+    "China, Hong Kong SAR": "Hong Kong",
+    "China, Macao SAR": "Macao",
+    "The former Yugoslav Republic of Macedonia": "North Macedonia",
+    "Côte d'Ivoire": "Ivory Coast",
+    "Democratic People's Republic of Korea": "North Korea",
+    "Democratic Republic of the Congo": "DR Congo",
+    "Syrian Arab Republic": "Syria",
+    "Lao People's Democratic Republic": "Laos",
+    "Iran (Islamic Republic of)": "Iran",
+    "United Republic of Tanzania": "Tanzania",
+    "Viet Nam": "Vietnam",
+    "Swaziland": "Eswatini",
+    "Congo": "Republic of the Congo",
+})
 
 # Global Mean column
 contraceptive_prevalence_df['Mean Contraceptive Use (%)'] = (
@@ -240,58 +257,73 @@ def show_plot(selected_country: str):
     # Redraw Tkinter canvas
     canvas.draw()
 
-def button_command():
-    selected = listbox.curselection()
-    if selected:
-        country = listbox.get(selected[0])
-        show_plot(country)
-
 ####################
   # User Interface
 ####################
-
-# Initialize Tkinter
 root = Tk()
 root.title("Correlation Program")
 
 fig, ax = plt.subplots()
-canvas = FigureCanvasTkAgg(fig, master=root)  
+canvas = FigureCanvasTkAgg(fig, master=root)
 canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
-# Label
 label = Label(root, text="Select a Country", font=("Courier", 24))
 label.pack(pady=10)
 
-# Create Combobox with country list
-countries = sorted(female_homicide_rates_df["Country"].dropna().unique())
-
-country_combobox = ttk.Combobox(
-    root,
-    values=countries,
-    state="readonly",   # Only allow selection (no free typing)
-    width=40,
-    font=("Helvetica", 12)
+# Combine countries from both datasets
+all_countries = sorted(
+    set(female_homicide_rates_df["Country"].dropna().unique()) |
+    set(contraceptive_prevalence_df["Country"].dropna().unique())
 )
+
+country_combobox = ttk.Combobox(root, values=all_countries, state="normal",
+                                width=40, font=("Helvetica", 12))
 country_combobox.pack(pady=5)
+country_combobox.set("Type a country...")
 
-# Default selection prompt
-country_combobox.set("Select a country")
+# -----------------------------
+# Autocomplete + Enter + Placeholder
+# -----------------------------
+placeholder_cleared = False
 
-# Event handler for Combobox selection
-def on_country_selected(event):
-    selected_country = country_combobox.get()
-    if selected_country in countries:
-        show_plot(selected_country)
+def clear_placeholder(event):
+    global placeholder_cleared
+    if not placeholder_cleared:
+        country_combobox.set("")
+        placeholder_cleared = True
+
+def autocomplete(event):
+    typed = country_combobox.get().lower()
+    # Don't change the current typed text
+    if typed == "":
+        filtered = all_countries
+    else:
+        starts_with = [c for c in all_countries if c.lower().startswith(typed)]
+        contains = [c for c in all_countries if typed in c.lower() and c not in starts_with]
+        filtered = starts_with + contains
+
+    # Only update the dropdown values, not the text in the box
+    country_combobox['values'] = filtered
+
+def select_country():
+    typed_country = country_combobox.get()
+    matches = [c for c in all_countries if c.lower() == typed_country.lower()]
+    if matches:
+        country_combobox.set(matches[0])
+        show_plot(matches[0])
     else:
         ax.clear()
-        ax.text(
-            0.5, 0.5,
-            "Please select a valid country",
-            ha="center", va="center", fontsize=14
-        )
+        ax.text(0.5, 0.5, "Please select a valid country", ha='center', va='center', fontsize=14)
         canvas.draw()
 
-# Bind event to combobox selection
-country_combobox.bind("<<ComboboxSelected>>", on_country_selected)
+def on_enter(event):
+    if country_combobox['values']:
+        country_combobox.set(country_combobox['values'][0])
+        select_country()
+
+country_combobox.bind('<FocusIn>', clear_placeholder)
+country_combobox.bind('<KeyRelease>', autocomplete)
+country_combobox.bind("<<ComboboxSelected>>", lambda e: select_country())
+country_combobox.bind('<Return>', on_enter)
 
 root.mainloop()
