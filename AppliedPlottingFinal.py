@@ -148,7 +148,7 @@ merged_df = merged_df.join(yearly_mean_df)
 merged_df = merged_df.dropna()
 
 def show_plot(selected_country: str):
-    ax.clear
+    ax.clear # Clear the screen each time it's called
     ## Create shared dataframe
 
     # Filter dataframes by desired country
@@ -203,7 +203,7 @@ def show_plot(selected_country: str):
     plt.title(f"Correlation: Female Homicide Rate vs Contraceptive Use for {selected_country}")
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
-    canvas.draw()
+    canvas.draw() # Interface with the GUI
 
 
 ####################
