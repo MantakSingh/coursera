@@ -260,6 +260,7 @@ def show_plot(selected_country: str):
 ####################
   # User Interface
 ####################
+
 root = Tk()
 root.title("Correlation Program")
 
@@ -281,9 +282,10 @@ country_combobox = ttk.Combobox(root, values=all_countries, state="normal",
 country_combobox.pack(pady=5)
 country_combobox.set("Type a country...")
 
-# -----------------------------
-# Autocomplete + Enter + Placeholder
-# -----------------------------
+################
+ # Autocomplete
+################
+
 placeholder_cleared = False
 
 def clear_placeholder(event):
