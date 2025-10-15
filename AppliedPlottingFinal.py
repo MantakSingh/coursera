@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot  as plt
-import tkinter as tk
-from tkinter import ttk
+from matplotlib.backends.backend_tkagg import (
+     FigureCanvasTkAgg, NavigationToolbar2Tk)
+from tkinter import *
 '''
 This program plots the correlation between rates of female homicide and rates of contraceptive usage. My hypothesis is that as contraceptive use increases,
 female homicide rates decrease. The idea being that higher contraceptive usage indicates societies that value women more highly. 
@@ -100,21 +101,22 @@ def expand_year_ranges(df):
     expanded_df = pd.DataFrame(expanded_rows)
     return expanded_df.reset_index(drop=True)
     
-# Get rid of the hyphenated year ranges
+# Apply the previous function
 contraceptive_prevalence_df = expand_year_ranges(contraceptive_prevalence_df)
 
 # Convert columns to numeric safely
 contraceptive_prevalence_df["Year(s)"] = pd.to_numeric(contraceptive_prevalence_df["Year(s)"], errors="coerce")
 contraceptive_prevalence_df["Contraceptive Use Percentage"] = pd.to_numeric(contraceptive_prevalence_df["Contraceptive Use Percentage"], errors="coerce")
-
 contraceptive_prevalence_df = contraceptive_prevalence_df.replace([np.inf, -np.inf], np.nan).dropna(subset=["Year(s)", "Contraceptive Use Percentage"])
 
+# Rename countries
 contraceptive_prevalence_df["Country"].replace({
     'China, Hong Kong SAR': 'Hong Kong',
     'The former Yugoslav Republic of Macedonia': 'North Macedonia'
 }, inplace=True
 )
 
+# Global Mean column
 contraceptive_prevalence_df['Mean Contraceptive Use (%)'] = (
     contraceptive_prevalence_df.groupby('Year(s)')['Contraceptive Use Percentage']
       .transform('mean')
@@ -124,7 +126,7 @@ contraceptive_prevalence_df['Mean Contraceptive Use (%)'] = (
   # Global Variables
 ######################
 
-# Global merged dataframe
+# Global merged dataframe that displays the global means for each year
 merged_df = pd.DataFrame(columns=female_homicide_rates_df.columns)
 merged_df.drop('Country', axis = 'columns', inplace=True)
 merged_df.loc['Female Homicide Percentage Mean'] = female_homicide_rates_df.loc['Mean']
@@ -144,32 +146,9 @@ yearly_mean_df.set_index('Year(s)',inplace= True)
 
 merged_df = merged_df.join(yearly_mean_df)
 merged_df = merged_df.dropna()
-    
-# Turn the countries of each Dataframe into a series
-homicide_countries = female_homicide_rates_df["Country"]
-contraceptive_countries = contraceptive_prevalence_df["Country"]
-
-# Group repeating countries into single entries
-contraceptive_countries = contraceptive_countries.unique()
-contraceptive_countries = pd.Series(contraceptive_countries) # Turn NumPy Array back into a Pandas Series
-contraceptive_countries.name = 'Country'
-contraceptive_countries = contraceptive_countries.dropna()
-
-homicide_countries = homicide_countries.shift(-1)
-homicide_countries.drop(index = [157, 'Mean'], inplace= True)
-
-homicide_countries = homicide_countries.dropna()
-
-missing_in_contraceptive = set(homicide_countries.dropna()) - set(contraceptive_countries.dropna())
-missing_in_homicide = set(contraceptive_countries.dropna()) - set(homicide_countries.dropna())
-
-missing_countries = []
-for value in homicide_countries:
-    if value not in contraceptive_countries.values:
-        missing_countries.append(value)
 
 def show_plot(selected_country: str):
-
+    ax.clear
     ## Create shared dataframe
 
     # Filter dataframes by desired country
@@ -224,47 +203,27 @@ def show_plot(selected_country: str):
     plt.title(f"Correlation: Female Homicide Rate vs Contraceptive Use for {selected_country}")
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
-    plt.show()
+    canvas.draw()
 
 
 ####################
   # User Interface
 ####################
 
-# Creating tkinter window
-window = tk.Tk()
-window.title('Correlation Program')
-window.geometry('500x250')
+# Initialize Tkinter
+root = Tk()
+fig, ax = plt.subplots()
 
-# label text for title
-ttk.Label(window, text = "Correlation for Female Homicide Rates and Contraceptive Usage", 
-          background = 'green', foreground ="white", 
-          font = ("Times New Roman", 12)).grid(row = 0, column = 1)
+# Create Canvas
+canvas = FigureCanvasTkAgg(fig, master=root)  
+canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
-# label
-ttk.Label(window, text = "Select the Month :",
-          font = ("Times New Roman", 10)).grid(column = 0,
-          row = 5, padx = 10, pady = 25)
-
-# Combobox creation
-n = tk.StringVar()
-monthchoosen = ttk.Combobox(window, width = 27, textvariable = n)
-
-# Adding combobox drop down list
-monthchoosen['values'] = (' January', 
-                          ' February',
-                          ' March',
-                          ' April',
-                          ' May',
-                          ' June',
-                          ' July',
-                          ' August',
-                          ' September',
-                          ' October',
-                          ' November',
-                          ' December')
-
-monthchoosen.grid(column = 1, row = 5)
-monthchoosen.current(1)
-window.mainloop()
-
+# Tkinter Application
+frame = Frame(root)
+label = Label(text = "Correlation Program")
+label.config(font=("Courier", 32))
+label.pack()
+frame.pack()
+user_entry =Entry(root)
+user_entry.pack()
+root.mainloop()
