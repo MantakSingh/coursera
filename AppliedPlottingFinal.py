@@ -148,64 +148,51 @@ merged_df = merged_df.join(yearly_mean_df)
 merged_df = merged_df.dropna()
 
 def show_plot(selected_country: str):
-    ax.clear # Clear the screen each time it's called
-    ## Create shared dataframe
+    global ax, canvas # Load the existing plot
+    ax.clear()  # Clear previous graphs
 
     # Filter dataframes by desired country
     selected_contraceptive_df = contraceptive_prevalence_df[contraceptive_prevalence_df['Country']==selected_country]
     selected_homicide_df = female_homicide_rates_df[female_homicide_rates_df["Country"]==selected_country]
     
     # Clean contraceptive dataframe
-    selected_contraceptive_df.drop(["Mean Contraceptive Use (%)", "Country"], axis = 1, inplace= True) # Drop Global mean & Country column
-    selected_contraceptive_df = selected_contraceptive_df.T # Flip the Dataframe
+    selected_contraceptive_df = selected_contraceptive_df.drop(["Mean Contraceptive Use (%)", "Country"], axis=1).T
     selected_contraceptive_df.columns = selected_contraceptive_df.loc['Year(s)']
-    selected_contraceptive_df.drop(index = "Year(s)", inplace= True)
-    selected_contraceptive_df.columns = selected_contraceptive_df.columns.astype(int) # Fix the type
+    selected_contraceptive_df = selected_contraceptive_df.drop("Year(s)")
+    selected_contraceptive_df.columns = selected_contraceptive_df.columns.astype(int)
     selected_contraceptive_df = selected_contraceptive_df.T
 
     # Clean homicide dataframe
     selected_homicide_df = selected_homicide_df.T
     selected_homicide_df.columns = selected_homicide_df.iloc[0]
-    selected_homicide_df.drop("Country", axis = 0, inplace = True)
+    selected_homicide_df = selected_homicide_df.drop("Country")
     selected_homicide_df.columns = ['Female Homicide Percentage Mean']
-    selected_homicide_df.index.name = 'Year(s)'
-    selected_homicide_df.index = selected_homicide_df.index.astype(int) # Fix Index data type
-
-    # Create the new merged dataframe
-    desired_df = pd.merge( selected_homicide_df, selected_contraceptive_df, left_index=True, right_index=True)
-
-    ## Plot
-
-    # Make a copy to be safe
-    plot_df = desired_df.copy()
-
-    # Ensure numeric values and dropping invalid rows
-    plot_df = plot_df.apply(pd.to_numeric, errors='coerce').dropna(subset=["Contraceptive Use Percentage", "Female Homicide Percentage Mean"])
-
-    # Extract x and y as floats
+    selected_homicide_df.index = selected_homicide_df.index.astype(int)
+    
+    # Merge data
+    desired_df = pd.merge(selected_homicide_df, selected_contraceptive_df, left_index=True, right_index=True)
+    plot_df = desired_df.apply(pd.to_numeric, errors='coerce').dropna(subset=["Contraceptive Use Percentage", "Female Homicide Percentage Mean"])
+    
     x = plot_df["Contraceptive Use Percentage"].values
     y = plot_df["Female Homicide Percentage Mean"].values
-
-    # Fit linear trendline
     m, b = np.polyfit(x, y, 1)
+    corr = np.corrcoef(x, y)[0,1]
 
-    # Compute correlation
-    corr = plot_df.corr(method="pearson")
-    corr = corr.iloc[0,1]
-    
-    # Plot
-  
-    plt.figure(figsize=(8,6))
-    plt.scatter(x, y, alpha=0.7, color='blue', label='Data points')
-    plt.plot(x, m*x + b, color='red', linewidth=2, label=f'Trendline (r={corr})')
-    plt.xlabel("Contraceptive Use Percentage")
-    plt.ylabel("Female Homicide Percentage Mean")
-    plt.title(f"Correlation: Female Homicide Rate vs Contraceptive Use for {selected_country}")
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.5)
-    canvas.draw() # Interface with the GUI
+    # Plot on existing axes
+    ax.scatter(x, y, alpha=0.7, color='blue', label='Data points')
+    ax.plot(x, m*x + b, color='red', linewidth=2, label=f'Trendline (r={corr:.2f})')
+    ax.set_xlabel("Contraceptive Use Percentage")
+    ax.set_ylabel("Female Homicide Percentage Mean")
+    ax.set_title(f"{selected_country}: Female Homicide vs Contraceptive Use")
+    ax.legend()
+    ax.grid(True, linestyle='--', alpha=0.5)
 
+    # Redraw Tkinter canvas
+    canvas.draw()
 
+def button_command():
+    text = user_entry.get()
+    show_plot(text)
 ####################
   # User Interface
 ####################
@@ -222,8 +209,11 @@ canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 frame = Frame(root)
 label = Label(text = "Correlation Program")
 label.config(font=("Courier", 32))
+user_entry =Entry(root)
+
+# Slot the widgets
 label.pack()
 frame.pack()
-user_entry =Entry(root)
 user_entry.pack()
+Button(root, text = "Run Function", command = button_command).pack()
 root.mainloop()
