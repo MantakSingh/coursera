@@ -4,6 +4,7 @@ import matplotlib.pyplot  as plt
 from matplotlib.backends.backend_tkagg import (
      FigureCanvasTkAgg, NavigationToolbar2Tk)
 from tkinter import *
+from tkinter import ttk
 '''
 This program plots the correlation between rates of female homicide and rates of contraceptive usage. My hypothesis is that as contraceptive use increases,
 female homicide rates decrease. The idea being that higher contraceptive usage indicates societies that value women more highly. 
@@ -191,29 +192,57 @@ def show_plot(selected_country: str):
     canvas.draw()
 
 def button_command():
-    text = user_entry.get()
-    show_plot(text)
+    selected = listbox.curselection()
+    if selected:
+        country = listbox.get(selected[0])
+        show_plot(country)
+
 ####################
   # User Interface
 ####################
 
 # Initialize Tkinter
 root = Tk()
-fig, ax = plt.subplots()
+root.title("Correlation Program")
 
-# Create Canvas
+fig, ax = plt.subplots()
 canvas = FigureCanvasTkAgg(fig, master=root)  
 canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
 
-# Tkinter Application
-frame = Frame(root)
-label = Label(text = "Correlation Program")
-label.config(font=("Courier", 32))
-user_entry =Entry(root)
+# Label
+label = Label(root, text="Select a Country", font=("Courier", 24))
+label.pack(pady=10)
 
-# Slot the widgets
-label.pack()
-frame.pack()
-user_entry.pack()
-Button(root, text = "Run Function", command = button_command).pack()
+# Create Combobox with country list
+countries = sorted(female_homicide_rates_df["Country"].dropna().unique())
+
+country_combobox = ttk.Combobox(
+    root,
+    values=countries,
+    state="readonly",   # Only allow selection (no free typing)
+    width=40,
+    font=("Helvetica", 12)
+)
+country_combobox.pack(pady=5)
+
+# Default selection prompt
+country_combobox.set("Select a country")
+
+# Event handler for Combobox selection
+def on_country_selected(event):
+    selected_country = country_combobox.get()
+    if selected_country in countries:
+        show_plot(selected_country)
+    else:
+        ax.clear()
+        ax.text(
+            0.5, 0.5,
+            "Please select a valid country",
+            ha="center", va="center", fontsize=14
+        )
+        canvas.draw()
+
+# Bind event to combobox selection
+country_combobox.bind("<<ComboboxSelected>>", on_country_selected)
+
 root.mainloop()
