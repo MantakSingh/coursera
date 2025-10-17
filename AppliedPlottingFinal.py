@@ -5,6 +5,7 @@ from matplotlib.backends.backend_tkagg import (
      FigureCanvasTkAgg, NavigationToolbar2Tk)
 from tkinter import *
 from tkinter import ttk
+
 '''
 This program plots the correlation between rates of female homicide and rates of contraceptive usage. My hypothesis is that as contraceptive use increases,
 female homicide rates decrease. The idea being that higher contraceptive usage indicates societies that value women more highly. 
@@ -93,7 +94,6 @@ def expand_year_ranges(df):
                     new_row["Year(s)"] = y
                     expanded_rows.append(new_row)
             except ValueError:
-                # Skip malformed ranges (e.g., "201a-201b")
                 continue
 
         # Handle single years (even if stored as strings)
@@ -150,10 +150,10 @@ merged_df.drop('Country', axis = 'columns', inplace=True)
 merged_df.loc['Female Homicide Percentage Mean'] = female_homicide_rates_df.loc['Mean']
 
 # Flip the columns to the index
-merged_series = merged_df.loc['Female Homicide Percentage Mean'] # This is only temporary / I'm not using this again
-merged_df = merged_series.reset_index() # Make it into a dataframe
-merged_df.set_index('index', inplace= True) # Make the column an index
-merged_df.index = merged_df.index.astype(int) # Fix the type
+merged_series = merged_df.loc['Female Homicide Percentage Mean'] 
+merged_df = merged_series.reset_index() 
+merged_df.set_index('index', inplace= True) 
+merged_df.index = merged_df.index.astype(int) 
 yearly_mean_series = (
     contraceptive_prevalence_df.groupby('Year(s)')['Contraceptive Use Percentage']
       .mean()
@@ -166,8 +166,66 @@ merged_df = merged_df.join(yearly_mean_df)
 merged_df = merged_df.dropna()
 
 def show_plot(selected_country: str):
-    global ax, canvas  # Load the existing plot
-    ax.clear()  # Clear previous graphs
+    global ax, canvas
+    ax.clear()
+
+    # If "Global Data" selected, use merged_df directly
+    if selected_country == "Global Data":
+        # Ensure numeric conversion and drop NaNs
+        merged_numeric = merged_df.apply(pd.to_numeric, errors='coerce').dropna(
+            subset=["Contraceptive Use Percentage", "Female Homicide Percentage Mean"]
+        )
+
+        # Convert to numpy floats
+        try:
+            x = merged_numeric["Contraceptive Use Percentage"].values.astype(float)
+            y = merged_numeric["Female Homicide Percentage Mean"].values.astype(float)
+        except Exception:
+            ax.text(
+                0.5, 0.5,
+                "Insufficient Global Data (non-numeric values)",
+                ha='center', va='center',
+                fontsize=14, color='red', style='italic'
+            )
+            ax.set_title("Global Data: Insufficient Data")
+            canvas.draw()
+            return
+
+        if len(x) < 2 or len(y) < 2:
+            ax.text(
+                0.5, 0.5,
+                "Insufficient Global Data (too few points)",
+                ha='center', va='center',
+                fontsize=14, color='red', style='italic'
+            )
+            ax.set_title("Global Data: Insufficient Data")
+            canvas.draw()
+            return
+
+        # Compute trendline and correlation safely
+        try:
+            m, b = np.polyfit(x, y, 1)
+            corr = np.corrcoef(x, y)[0, 1]
+        except Exception:
+            ax.text(
+                0.5, 0.5,
+                "Unable to compute trendline for Global Data",
+                ha='center', va='center',
+                fontsize=14, color='red', style='italic'
+            )
+            ax.set_title("Global Data: Computation Error")
+            canvas.draw()
+            return
+
+        ax.scatter(x, y, alpha=0.7, color='blue', label='Global Data Points')
+        ax.plot(x, m*x + b, color='red', linewidth=2, label=f'Trendline (r={corr:.2f})')
+        ax.set_xlabel("Contraceptive Use Percentage")
+        ax.set_ylabel("Female Homicide Percentage Data")
+        ax.set_title("Global Data: Female Homicide vs Contraceptive Use")
+        ax.legend()
+        ax.grid(True, linestyle='--', alpha=0.5)
+        canvas.draw()
+        return
 
     # Filter dataframes by desired country
     selected_contraceptive_df = contraceptive_prevalence_df[
@@ -189,27 +247,80 @@ def show_plot(selected_country: str):
         canvas.draw()
         return
 
-    # Clean contraceptive dataframe
-    selected_contraceptive_df = selected_contraceptive_df.drop(
-        ["Mean Contraceptive Use (%)", "Country"], axis=1
-    ).T
-    selected_contraceptive_df.columns = selected_contraceptive_df.loc['Year(s)']
-    selected_contraceptive_df = selected_contraceptive_df.drop("Year(s)")
-    selected_contraceptive_df.columns = selected_contraceptive_df.columns.astype(int)
-    selected_contraceptive_df = selected_contraceptive_df.T
+    # Clean contraceptive dataframe: reformat to Year-indexed series
+    try:
+        sel_cont = selected_contraceptive_df.copy()
+        sel_cont = sel_cont.drop(["Mean Contraceptive Use (%)", "Country"], axis=1)
+        # transpose trick in original: turn rows into columns where first row is Year(s)
+        sel_cont = sel_cont.T
+        sel_cont.columns = sel_cont.loc['Year(s)']
+        sel_cont = sel_cont.drop("Year(s)")
+        sel_cont.columns = sel_cont.columns.astype(int)
+        sel_cont = sel_cont.T
+        selected_contraceptive_df_clean = sel_cont
+        selected_contraceptive_df_clean.columns = ["Contraceptive Use Percentage"]
+        selected_contraceptive_df_clean.index.name = "Year"
+    except Exception:
+        # Fallback method: use the Year(s) and Contraceptive Use Percentage columns
+        selected_contraceptive_df_clean = selected_contraceptive_df[["Year(s)", "Contraceptive Use Percentage"]].copy()
+        selected_contraceptive_df_clean = selected_contraceptive_df_clean.dropna()
+        selected_contraceptive_df_clean["Year(s)"] = selected_contraceptive_df_clean["Year(s)"].astype(int)
+        selected_contraceptive_df_clean = selected_contraceptive_df_clean.set_index("Year(s)")
+        selected_contraceptive_df_clean.columns = ["Contraceptive Use Percentage"]
 
     # Clean homicide dataframe
-    selected_homicide_df = selected_homicide_df.T
-    selected_homicide_df.columns = selected_homicide_df.iloc[0]
-    selected_homicide_df = selected_homicide_df.drop("Country")
-    selected_homicide_df.columns = ['Female Homicide Percentage Mean']
-    selected_homicide_df.index = selected_homicide_df.index.astype(int)
-    
-    # Merge data
-    desired_df = pd.merge(
-        selected_homicide_df, selected_contraceptive_df,
-        left_index=True, right_index=True
+    try:
+        sel_hom = selected_homicide_df.copy().T
+        sel_hom.columns = sel_hom.iloc[0]
+        sel_hom = sel_hom.drop("Country")
+        sel_hom.columns = ['Female Homicide Percentage Mean']
+        sel_hom.index = sel_hom.index.astype(int)
+        selected_homicide_df_clean = sel_hom
+    except Exception:
+        # If the above fails, try to extract year columns in the year range
+        temp = selected_homicide_df.copy()
+        # Keep only numeric-like columns (years)
+        year_cols = [c for c in temp.columns if str(c).isdigit()]
+        if len(year_cols) == 0:
+            # no usable data
+            ax.text(0.5, 0.5, f"Insufficient data for {selected_country}",
+                    ha='center', va='center', fontsize=14, color='red', style='italic')
+            ax.set_title(f"{selected_country}: Insufficient Data")
+            canvas.draw()
+            return
+        sel_hom2 = temp[year_cols].T
+        sel_hom2.columns = ['Female Homicide Percentage Mean']
+        sel_hom2.index = sel_hom2.index.astype(int)
+        selected_homicide_df_clean = sel_hom2
+
+    # Ensure numeric types
+    selected_contraceptive_df_clean["Contraceptive Use Percentage"] = pd.to_numeric(
+        selected_contraceptive_df_clean["Contraceptive Use Percentage"], errors='coerce'
     )
+    selected_homicide_df_clean["Female Homicide Percentage Mean"] = pd.to_numeric(
+        selected_homicide_df_clean["Female Homicide Percentage Mean"], errors='coerce'
+    )
+
+    # Merge on year index
+    try:
+        desired_df = pd.merge(
+            selected_homicide_df_clean, selected_contraceptive_df_clean,
+            left_index=True, right_index=True
+        )
+    except Exception:
+        # As fallback, align by intersection of indices
+        common_years = selected_homicide_df_clean.index.intersection(selected_contraceptive_df_clean.index)
+        if len(common_years) == 0:
+            ax.text(0.5, 0.5, f"Insufficient overlapping years for {selected_country}",
+                    ha='center', va='center', fontsize=14, color='red', style='italic')
+            ax.set_title(f"{selected_country}: No Overlap")
+            canvas.draw()
+            return
+        desired_df = pd.concat([
+            selected_homicide_df_clean.loc[common_years],
+            selected_contraceptive_df_clean.loc[common_years]
+        ], axis=1)
+
     plot_df = desired_df.apply(pd.to_numeric, errors='coerce').dropna(
         subset=["Contraceptive Use Percentage", "Female Homicide Percentage Mean"]
     )
@@ -226,8 +337,8 @@ def show_plot(selected_country: str):
         canvas.draw()
         return
 
-    x = plot_df["Contraceptive Use Percentage"].values
-    y = plot_df["Female Homicide Percentage Mean"].values
+    x = plot_df["Contraceptive Use Percentage"].values.astype(float)
+    y = plot_df["Female Homicide Percentage Mean"].values.astype(float)
 
     try:
         m, b = np.polyfit(x, y, 1)
@@ -277,6 +388,10 @@ all_countries = sorted(
     set(contraceptive_prevalence_df["Country"].dropna().unique())
 )
 
+# Insert Global Data as an option (at top)
+if "Global Data" not in all_countries:
+    all_countries.insert(0, "Global Data")
+
 country_combobox = ttk.Combobox(root, values=all_countries, state="normal",
                                 width=40, font=("Helvetica", 12))
 country_combobox.pack(pady=5)
@@ -308,24 +423,61 @@ def autocomplete(event):
     country_combobox['values'] = filtered
 
 def select_country():
-    typed_country = country_combobox.get()
-    matches = [c for c in all_countries if c.lower() == typed_country.lower()]
-    if matches:
-        country_combobox.set(matches[0])
-        show_plot(matches[0])
-    else:
+    typed_country = country_combobox.get().strip()
+    if not typed_country:
         ax.clear()
         ax.text(0.5, 0.5, "Please select a valid country", ha='center', va='center', fontsize=14)
         canvas.draw()
+        return
+
+    # Explicit Global Data handling
+    if typed_country.lower() == "global data".lower():
+        country_combobox.set("Global Data")
+        show_plot("Global Data")
+        return
+
+    # Create a case-insensitive lookup from the full list
+    lookup_full = {c.lower(): c for c in all_countries}
+    if typed_country.lower() in lookup_full:
+        country = lookup_full[typed_country.lower()]
+        country_combobox.set(country)
+        show_plot(country)
+        return
+
+    # Also check the current (possibly filtered) combobox values
+    current_vals = list(country_combobox['values'])
+    lookup_current = {c.lower(): c for c in current_vals}
+    if typed_country.lower() in lookup_current:
+        country = lookup_current[typed_country.lower()]
+        country_combobox.set(country)
+        show_plot(country)
+        return
+
+    # Fallback: if the typed text uniquely matches the start of exactly one country, use it
+    starts = [c for c in all_countries if c.lower().startswith(typed_country.lower())]
+    if len(starts) == 1:
+        country_combobox.set(starts[0])
+        show_plot(starts[0])
+        return
+
+    # Nothing matched
+    ax.clear()
+    ax.text(0.5, 0.5, "Please select a valid country", ha='center', va='center', fontsize=14)
+    canvas.draw()
 
 def on_enter(event):
-    if country_combobox['values']:
-        country_combobox.set(country_combobox['values'][0])
-        select_country()
+    # Try to select what the user typed instead of forcing first dropdown value
+    select_country()
 
 country_combobox.bind('<FocusIn>', clear_placeholder)
 country_combobox.bind('<KeyRelease>', autocomplete)
 country_combobox.bind("<<ComboboxSelected>>", lambda e: select_country())
 country_combobox.bind('<Return>', on_enter)
+
+# Pre-select Global Data in combobox so user sees the label
+country_combobox.set("Global Data")
+
+# Display global data as the default
+show_plot("Global Data")
 
 root.mainloop()
