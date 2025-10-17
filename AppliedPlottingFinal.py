@@ -202,7 +202,7 @@ def show_plot(selected_country: str):
             canvas.draw()
             return
 
-        # Compute trendline and correlation safely
+        # Compute trendline and correlation 
         try:
             m, b = np.polyfit(x, y, 1)
             corr = np.corrcoef(x, y)[0, 1]
@@ -247,11 +247,11 @@ def show_plot(selected_country: str):
         canvas.draw()
         return
 
-    # Clean contraceptive dataframe: reformat to Year-indexed series
+    # Clean contraceptive dataframe
     try:
         sel_cont = selected_contraceptive_df.copy()
         sel_cont = sel_cont.drop(["Mean Contraceptive Use (%)", "Country"], axis=1)
-        # transpose trick in original: turn rows into columns where first row is Year(s)
+        # Transpose to allow for merging
         sel_cont = sel_cont.T
         sel_cont.columns = sel_cont.loc['Year(s)']
         sel_cont = sel_cont.drop("Year(s)")
@@ -261,7 +261,7 @@ def show_plot(selected_country: str):
         selected_contraceptive_df_clean.columns = ["Contraceptive Use Percentage"]
         selected_contraceptive_df_clean.index.name = "Year"
     except Exception:
-        # Fallback method: use the Year(s) and Contraceptive Use Percentage columns
+        # Use the Year(s) and Contraceptive Use Percentage columns
         selected_contraceptive_df_clean = selected_contraceptive_df[["Year(s)", "Contraceptive Use Percentage"]].copy()
         selected_contraceptive_df_clean = selected_contraceptive_df_clean.dropna()
         selected_contraceptive_df_clean["Year(s)"] = selected_contraceptive_df_clean["Year(s)"].astype(int)
@@ -282,7 +282,7 @@ def show_plot(selected_country: str):
         # Keep only numeric-like columns (years)
         year_cols = [c for c in temp.columns if str(c).isdigit()]
         if len(year_cols) == 0:
-            # no usable data
+            # No usable data
             ax.text(0.5, 0.5, f"Insufficient data for {selected_country}",
                     ha='center', va='center', fontsize=14, color='red', style='italic')
             ax.set_title(f"{selected_country}: Insufficient Data")
@@ -308,7 +308,7 @@ def show_plot(selected_country: str):
             left_index=True, right_index=True
         )
     except Exception:
-        # As fallback, align by intersection of indices
+        # Align by intersection of indices
         common_years = selected_homicide_df_clean.index.intersection(selected_contraceptive_df_clean.index)
         if len(common_years) == 0:
             ax.text(0.5, 0.5, f"Insufficient overlapping years for {selected_country}",
@@ -372,15 +372,13 @@ def show_plot(selected_country: str):
   # User Interface
 ####################
 
-root = Tk()
+root = Tk() # Initialize Tkinter
 root.title("Correlation Program")
 
-fig, ax = plt.subplots()
+# Position the Matplotlib graph in the Tkinter Canvas
+fig, ax = plt.subplots() 
 canvas = FigureCanvasTkAgg(fig, master=root)
 canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-
-label = Label(root, text="Select a Country", font=("Courier", 24))
-label.pack(pady=10)
 
 # Combine countries from both datasets
 all_countries = sorted(
@@ -391,6 +389,10 @@ all_countries = sorted(
 # Insert Global Data as an option (at top)
 if "Global Data" not in all_countries:
     all_countries.insert(0, "Global Data")
+
+# Add Label & Combobox
+label = Label(root, text="Select a Country", font=("Courier", 24))
+label.pack(pady=10)
 
 country_combobox = ttk.Combobox(root, values=all_countries, state="normal",
                                 width=40, font=("Helvetica", 12))
@@ -444,7 +446,7 @@ def select_country():
         show_plot(country)
         return
 
-    # Also check the current (possibly filtered) combobox values
+    # Check the current (possibly filtered) combobox values
     current_vals = list(country_combobox['values'])
     lookup_current = {c.lower(): c for c in current_vals}
     if typed_country.lower() in lookup_current:
@@ -453,7 +455,7 @@ def select_country():
         show_plot(country)
         return
 
-    # Fallback: if the typed text uniquely matches the start of exactly one country, use it
+    # If the typed text uniquely matches the start of exactly one country, it defaults to that
     starts = [c for c in all_countries if c.lower().startswith(typed_country.lower())]
     if len(starts) == 1:
         country_combobox.set(starts[0])
@@ -474,7 +476,7 @@ country_combobox.bind('<KeyRelease>', autocomplete)
 country_combobox.bind("<<ComboboxSelected>>", lambda e: select_country())
 country_combobox.bind('<Return>', on_enter)
 
-# Pre-select Global Data in combobox so user sees the label
+# Set Global Data as combobox default
 country_combobox.set("Global Data")
 
 # Display global data as the default
